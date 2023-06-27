@@ -167,6 +167,13 @@ void RunState(void){
 			S.BT_sendState = 0;
 		}
 
+		/*--------change state to settings allowed so that we can get the settings whenever we want---*/
+		if (S.switchState == TO_SETTINGS){
+			ChangeState(&S,SETTINGS_STATE);
+			S.switchState = 0;
+			break;
+		}
+
 		//TODO:TO STOP WHEN LENGTH FINISHED
 		if (mcParams.currentMtrsRun >= msp.lengthLimit_m){
 			ChangeState(&S,FINISHED_STATE);

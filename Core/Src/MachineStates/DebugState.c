@@ -4,10 +4,6 @@
  *  Created on: 15-Apr-2023
  *      Author: harsha
  *
- *  Things to Do in Idle State for Flyer:
- *  1. Detect Button Press and do homing/ inching and start the full run cycle
- *  2. Save New settings from the app when we get them
- *  3. Write the Dbg codes to start motors. Dbg Stop is in the while loop.
  */
 
 #include "stdio.h"
@@ -117,6 +113,11 @@ void DebugState(void){
 			S.BT_sendState = 0;
 		}
 
+		if (S.switchState == TO_SETTINGS){
+			ChangeState(&S,SETTINGS_STATE);
+			S.switchState = 0;
+			break;
+		}
 
 
 	}//closes while
