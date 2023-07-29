@@ -26,7 +26,7 @@
 #define BT_DIAGNOSTIC_RUN 0x01
 #define BT_DIAGNOSTIC_STOP 0x06
 
-void BT_MC_generateSettingsMsg(machineSettingsTypeDef *m);
+uint8_t BT_MC_generateSettingsMsg(machineSettingsTypeDef *m);
 uint8_t BT_MC_parse_Settings(machineSettingsTypeDef *mspBT);
 uint8_t BT_MC_Save_Settings(void);
 uint8_t GetMotorID_from_BTMotor_ID(uint8_t BT_motorID);

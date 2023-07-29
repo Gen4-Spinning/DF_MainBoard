@@ -34,14 +34,10 @@ typedef struct StateStruct
 	char prev_state;
 	char switchState;
 
-	char idleMode;
 	char runMode;
 
 	char BT_dataOK;
 	char BT_Paired;
-
-	char HomingDoneCounter;
-	char HomingDone;
 
 	long oneSecTimer;
 	char BT_sendState;

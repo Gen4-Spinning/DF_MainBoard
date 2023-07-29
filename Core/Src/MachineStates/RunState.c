@@ -37,12 +37,13 @@ void RunState(void){
 	uint8_t response = 0;
 	uint8_t noOfMotors = 0;
 	uint8_t BTpacketSize = 0;
+	long currentTime;
 	while(1){
 
 		if (S.oneTime){
 			//send the start commands
 			uint8_t motors[] = {FR,BR,CREEL};
-			noOfMotors = 6;
+			noOfMotors = 3;
 			response = SendCommands_To_MultipleMotors(motors,noOfMotors,START);
 			if (response!= 2){
 				SO_enableCANObservers(&SO,motors,noOfMotors);
@@ -65,11 +66,19 @@ void RunState(void){
 		}
 
 		if (usrBtns.rotarySwitch == ROTARY_SWITCH_ON){
-			if ((usrBtns.yellowBtn == BTN_PRESSED) && (S.runMode == RUN_OPERATING)){
+			if (sensor.sliverCutSensor == 0){
+				sensor.sliverCutOneShot = 1;
+			}
+		}else{
+			sensor.sliverCutOneShot = 0;
+		}
+
+		if (S.runMode == RUN_OPERATING){
+			if ((usrBtns.yellowBtn == BTN_PRESSED) || (sensor.lappingSensorOneShot) || (sensor.sliverCutOneShot)){
 				usrBtns.yellowBtn = BTN_IDLE;
 				//Pause
 				uint8_t motors[] = {FR,BR,CREEL};
-				noOfMotors = 6;
+				noOfMotors = 3;
 				response = SendCommands_To_MultipleMotors(motors,noOfMotors,RAMPDOWN_STOP);
 				TowerLamp_SetState(&hmcp, &mcp_portB,BUZZER_OFF,RED_OFF,GREEN_OFF,AMBER_ON);
 				TowerLamp_ApplyState(&hmcp,&mcp_portB);
@@ -79,14 +88,48 @@ void RunState(void){
 
 				S.runMode = RUN_PAUSED;
 				S.BT_pauseReason = BT_PAUSE_USER_PRESSED;
+				if (sensor.lappingSensorOneShot){
+					S.BT_pauseReason = BT_PAUSE_LAPPING;
+				}else if (sensor.sliverCutOneShot){
+					S.BT_pauseReason = BT_PAUSE_CREEL_SLIVER_CUT;
+				}
+
+				sensor.lappingSensorOneShot = 0;
+				sensor.sliverCutOneShot = 0;
+
 				L.logRunStateChange = 1;
 			}
 
-			if ((usrBtns.greenBtn == BTN_PRESSED)  && (S.runMode == RUN_PAUSED)){
+			// stop btn
+			if (usrBtns.redBtn == BTN_PRESSED){
+				usrBtns.redBtn = BTN_IDLE;
+				//STOP
+				uint8_t motors[] = {FR,BR,CREEL};
+				noOfMotors = 3;
+				response = SendCommands_To_MultipleMotors(motors,noOfMotors,EMERGENCY_STOP);
+				S.runMode = RUN_STOPPED ;
+				S.BT_pauseReason = 0;
+
+				SO_disableAndResetCANObservers(&SO);
+
+				//beep once when we go to idle
+				TowerLamp_SetState(&hmcp,&mcp_portB,BUZZER_ON,RED_OFF,GREEN_OFF,AMBER_OFF);
+				TowerLamp_ApplyState(&hmcp,&mcp_portB);
+				HAL_Delay(1000); // to hear the beep
+
+				ChangeState(&S,IDLE_STATE);
+				SO_Reset_InitialLiftPosRecieved(&SO);
+				break;
+			}
+
+		}
+
+		if (S.runMode == RUN_PAUSED){
+			if (usrBtns.greenBtn == BTN_PRESSED){
 				usrBtns.greenBtn = BTN_IDLE;
 				//RESUME
 				uint8_t motors[] = {FR,BR,CREEL};
-				noOfMotors = 6;
+				noOfMotors = 3;
 				response = SendCommands_To_MultipleMotors(motors,noOfMotors,RESUME);
 
 				//TODO - later make it such that once the CAN starts it never needs to stop.
@@ -100,47 +143,27 @@ void RunState(void){
 				TowerLamp_ApplyState(&hmcp,&mcp_portB);
 				L.logRunStateChange = 1;
 			}
-		}
 
-		// stop btn
-		if (usrBtns.redBtn == BTN_PRESSED){
-			usrBtns.redBtn = BTN_IDLE;
-			//STOP
-			uint8_t motors[] = {FR,BR,CREEL};
-			noOfMotors = 6;
-			response = SendCommands_To_MultipleMotors(motors,noOfMotors,EMERGENCY_STOP);
-			S.runMode = RUN_STOPPED ;
-			S.BT_pauseReason = 0;
+			//DO inching if in the yellow button is pressed
+			if ((usrBtns.yellowBtn == BTN_PRESSED) && (usrBtns.logicApplied == 0)){
+				usrBtns.logicApplied = 1;
+				uint8_t motors[] = {FR,BR,CREEL};
+				noOfMotors = 3;
+				response = SendCommands_To_MultipleMotors(motors,noOfMotors,START);
 
-			SO_disableAndResetCANObservers(&SO);
+			}
 
-			//beep once when we go to idle
-			TowerLamp_SetState(&hmcp,&mcp_portB,BUZZER_ON,RED_OFF,GREEN_OFF,AMBER_OFF);
-			TowerLamp_ApplyState(&hmcp,&mcp_portB);
-			HAL_Delay(1000); // to hear the beep
+			if ((usrBtns.yellowBtn == BTN_IDLE) && (usrBtns.logicApplied == 1)){
+				usrBtns.logicApplied = 0;
+				// STOP INCHING
+				uint8_t motors[] = {FR,BR,CREEL};
+				noOfMotors = 3;
+				response = SendCommands_To_MultipleMotors(motors,noOfMotors,EMERGENCY_STOP);
+			}
+		} // closes if RUN PAUSED
 
-			ChangeState(&S,IDLE_STATE);
-			SO_Reset_InitialLiftPosRecieved(&SO);
-			break;
-		}
+		LappingSensorMonitor(&sensor); // sets lapping sensor one shot, which is used in the run operating mode, to go to pause
 
-
-		if (sensor.latchedCreelSensor){
-			//Pause
-			sensor.latchedCreelSensor = 0;
-			uint8_t motors[] = {FR,BR,CREEL};
-			noOfMotors = 6;
-			response = SendCommands_To_MultipleMotors(motors,noOfMotors,RAMPDOWN_STOP);
-			TowerLamp_SetState(&hmcp, &mcp_portB,BUZZER_OFF,RED_OFF,GREEN_OFF,AMBER_ON);
-			TowerLamp_ApplyState(&hmcp,&mcp_portB);
-
-			//TODO - later make it such that once the CAN starts it never needs to stop.
-			SO_disableAndResetCANObservers(&SO);
-
-			S.runMode = RUN_PAUSED;
-			S.BT_pauseReason = BT_PAUSE_CREEL_SLIVER_CUT;
-			L.logRunStateChange = 1;
-		}
 
 		//--------ways to go into Error State--------
 
@@ -155,6 +178,12 @@ void RunState(void){
 		}
 
 		//--------sending BT info--------
+
+		if (S.oneSecTimer != currentTime){
+			mcParams.totalPower = R[0].power + R[1].power + R[2].power;
+			currentTime = S.oneSecTimer;
+		}
+
 		// 500ms timer.
 		if ((S.BT_sendState == 1) && (S.BT_transmission_over == 1)){
 			if (S.runMode == RUN_OPERATING ){
@@ -175,12 +204,10 @@ void RunState(void){
 		}
 
 		//TODO:TO STOP WHEN LENGTH FINISHED
-		if (mcParams.currentMtrsRun >= msp.lengthLimit_m){
+		/*if (mcParams.currentMtrsRun >= msp.lengthLimit_m){
 			ChangeState(&S,FINISHED_STATE);
 			break;
-		}
-
-
+		}*/
 
 	}//closes while
 

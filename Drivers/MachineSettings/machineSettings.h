@@ -21,6 +21,9 @@
 #define BR_DIA_MM 30
 #define FR_TO_FRMOTOR_GEAR_RATIO 1
 #define BR_TO_BRMOTOR_GEAR_RATIO 6.91
+#define BR_TO_SR_BREAK_DRAFT 1.5
+#define CREEL_PULLEY_DIA 55
+#define SLIVER_WIDTH 6
 
 typedef struct machineSettings_Struct{
     int delivery_mMin;
@@ -36,13 +39,21 @@ typedef struct machineParamaters_Struct{
     uint16_t BR_MotorRPM;
     uint16_t Creel_MotorRPM;
 
+    float reqDraft_FR_TO_SR;
+
+    float FR_SurfaceSpeed;
+    float SR_SurfaceSpeed;
+    float req_BR_SurfaceSpeed;
+    float req_Creel_SurfaceSpeed;
+
+    float usedCreelDia;
+
     float FR_RPM;
 	float BR_RPM;
 
 	float currentMtrsRun;
-
+	float totalPower;
 }machineParamsTypeDef;
-
 
 extern machineSettingsTypeDef msp;
 extern machineSettingsTypeDef msp_BT;

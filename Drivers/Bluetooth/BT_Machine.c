@@ -8,7 +8,7 @@
 #include "BT_Machine.h"
 
 
-void BT_MC_generateSettingsMsg(machineSettingsTypeDef *m){
+uint8_t BT_MC_generateSettingsMsg(machineSettingsTypeDef *m){
 	  char TLV_Buffer[12];
 	  uint8_t tlvSize = 0;
 	  uint8_t eof_size  = 0;
@@ -38,6 +38,8 @@ void BT_MC_generateSettingsMsg(machineSettingsTypeDef *m){
 
 	  eof_size = addEOF(initLength+tlvSize);
 	  correctLengthInFrame(initLength,tlvSize,eof_size);
+
+	  return initLength + tlvSize + eof_size;
 
 }
 

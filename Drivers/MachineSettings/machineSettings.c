@@ -19,14 +19,20 @@ void CalculateMachineParameters(machineSettingsTypeDef *ms,machineParamsTypeDef 
 	float FR_circumference = FR_DIA_MM * 3.14;
 	mp->FR_RPM = ms->delivery_mMin * 1000/FR_circumference;
 	mp->FR_MotorRPM = mp->FR_RPM * FR_TO_FRMOTOR_GEAR_RATIO;
+	mp->FR_SurfaceSpeed = mp->FR_MotorRPM/60.0 * FR_circumference;
 
-	float req_BR_surfaceSpeed =  (ms->delivery_mMin*1000)/ms->draft;
-	mp->BR_RPM = req_BR_surfaceSpeed/(3.14 * BR_DIA_MM);
+	mp->reqDraft_FR_TO_SR = ms->draft/BR_TO_SR_BREAK_DRAFT;
+	mp->SR_SurfaceSpeed = mp->FR_SurfaceSpeed/mp->reqDraft_FR_TO_SR;
+	mp->req_BR_SurfaceSpeed = mp->SR_SurfaceSpeed/BR_TO_SR_BREAK_DRAFT;
+	mp->BR_RPM = mp->req_BR_SurfaceSpeed*60/(3.14 * BR_DIA_MM);
 	mp->BR_MotorRPM = mp->BR_RPM * BR_TO_BRMOTOR_GEAR_RATIO;
 
-	//TODO Get the roller dias and calculate later
-	mp->Creel_MotorRPM = 50;
+	mp->req_Creel_SurfaceSpeed = mp->req_BR_SurfaceSpeed;
+	mp->usedCreelDia = CREEL_PULLEY_DIA + SLIVER_WIDTH;
+	float creelCirc = mp->usedCreelDia * 3.14;
+	mp->Creel_MotorRPM = mp->req_Creel_SurfaceSpeed*60.0/creelCirc;
 	mp->currentMtrsRun = 0;
+
 }
 
 

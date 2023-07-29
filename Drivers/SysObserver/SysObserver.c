@@ -49,6 +49,8 @@ void SO_disableAndResetCANObservers(SysObserver *so){
 		so->CO[i].canDataCount = 0;
 	}
 	HAL_TIM_Base_Stop_IT(&htim16);
+	__HAL_TIM_SET_COUNTER(&htim16,0);
+	htim16.Instance->SR &= ~TIM_SR_UIF; // Clear pending flag of timer16
 }
 
 void SO_incrementCANCounter(SysObserver *so,uint8_t motorID){

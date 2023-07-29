@@ -186,23 +186,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	  timer7Count ++;
 	  if (timer7Count % 5 == 0){
 		  S.BT_sendState = 1;
+		  if (S.runMode== RUN_OPERATING){
+			  mcParams.currentMtrsRun += msp.delivery_mMin/60.0 * 0.5;
+		  }
 	  }
+
 	  if (timer7Count == 10){
 		  S.oneSecTimer++;
 		  timer7Count = 0;
 		  Toggle_State_LEDs(&S);
+		  if (sensor.lappingTimerIncrementBool){
+			  sensor.lappingSensorTimer++;
+		  }
 	  }
-	  //send data in GB calib state every 100 ms
-	  if (S.current_state == GB_CALIB_STATE){
-		  S.BT_send_GBcalibData = 1;
-	  }
-
-  }
-
-
-  if(htim == &htim6){ //500ms delay to start checking lift relative data
-	  SO.initialLiftPosRecieved= 1;
-	  HAL_TIM_Base_Stop_IT(&htim6);
   }
 
 }
@@ -215,11 +211,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 
 	if (GPIO_Pin == INT_B_Pin){
 		sensorTrigger = Sensor_whichTriggered(&hmcp,&mcp_portB_sensorVal);
-		if (sensorTrigger == SLIVER_CUT_SENSOR){
-			sensor.creelSensor = Sensor_GetTriggerValue(&hmcp,&mcp_portB_sensorVal,SLIVER_CUT_SENSOR);
-			if(sensor.creelSensor == 1){
-				sensor.latchedCreelSensor = 1;
-			}
+		if (sensorTrigger == LAPPING_SENSOR){
+			sensor.lappingSensor = Sensor_GetTriggerValue(&hmcp,&mcp_portB_sensorVal,LAPPING_SENSOR);
+		}else if (sensorTrigger == CREEL_SLIVER_CUT_SENSOR){
+			sensor.sliverCutSensor = Sensor_GetTriggerValue(&hmcp,&mcp_portB_sensorVal,CREEL_SLIVER_CUT_SENSOR);
 		}
 	}else if (GPIO_Pin == SMPS_OK_IP_Pin){
 		// if the mother board has turned the SMPS on, but the smps is off, we have a problem!
@@ -354,11 +349,6 @@ int main(void)
 
   //read initial btns states and set either setup or run state.
   UsrBtns_SetInitialStates();
-  if (usrBtns.rotarySwitch == ROTARY_SWITCH_OFF){
-	  S.idleMode = IDLE_SETUP;
-  }else{
-	  S.idleMode = IDLE_RUN;
-  }
   S.current_state = INITIAL_STATE;
   ChangeState(&S,IDLE_STATE);
 
@@ -376,9 +366,12 @@ int main(void)
   //Start the 1000 msec Timer for checking if the CAN bus is Ok
   HAL_TIM_Base_Start_IT(&htim16);
 
+  sensor.lappingSensor = 0; // initial state
+  sensor.sliverCutSensor = 1;
+
   //SMPS - turn on the SMPS, wait a while to see if  short command.
   SMPS_TurnOn();
-  HAL_Delay(3000);//contactor takes a long time to turn on.
+  HAL_Delay(1000);//contactor takes a long time to turn on.
 
   /*uint8_t smps = (uint8_t)(HAL_GPIO_ReadPin(SMPS_OK_IP_GPIO_Port, SMPS_OK_IP_Pin));
   if (smps == SMPS_OFF){
@@ -386,8 +379,6 @@ int main(void)
 	  ME_addErrors(&ME,ERR_SYSTEM_LEVEL_SOURCE, SYS_SMPS_ERROR, ERROR_SOURCE_SYSTEM,0); // maybe later find out which ACK failed.
 	  S.SMPS_switchOff = 1;
   }*/
-
-  S.LOG_enabled = 1;
 
   /* USER CODE END 2 */
 
@@ -422,9 +413,6 @@ int main(void)
 		ErrorState();
 	}
 
-	if (S.current_state == FINISHED_STATE){
-			FinishState();
-	}
 
     /* USER CODE END WHILE */
 
@@ -962,17 +950,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : YELLOW_Pin GREEN_Pin RED_Pin ROTARY_Pin */
-  GPIO_InitStruct.Pin = YELLOW_Pin|GREEN_Pin|RED_Pin|ROTARY_Pin;
+  /*Configure GPIO pins : GREEN_Pin YELLOW_Pin RED_Pin */
+  GPIO_InitStruct.Pin = GREEN_Pin|YELLOW_Pin|RED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SMPS_OK_IP_Pin */
-  GPIO_InitStruct.Pin = SMPS_OK_IP_Pin;
+  /*Configure GPIO pins : ROTARY_Pin SMPS_OK_IP_Pin */
+  GPIO_InitStruct.Pin = ROTARY_Pin|SMPS_OK_IP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SMPS_OK_IP_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SMPS_CNTRL_GND_Pin EXTRA1_Pin DBG_TP_Pin */
   GPIO_InitStruct.Pin = SMPS_CNTRL_GND_Pin|EXTRA1_Pin|DBG_TP_Pin;

@@ -15,7 +15,6 @@ void InitializeState_TypeDef(StateTypeDef *s){
 	s->current_state = IDLE_STATE;
 	s->prev_state = INITIAL_STATE;
 
-	s->idleMode  = 0;
 	s->oneTime = 0;
 
 	s->BT_paired = 0;
@@ -36,10 +35,5 @@ void ChangeState(StateTypeDef *s, uint8_t newState){
 	s->current_state = newState;
 	s->oneTime = 1;
 }
-
- void ResetHomingState(StateTypeDef *s){
-	 s->HomingDone  = 0;
-	 s->HomingDoneCounter = 0;
- }
 
 #endif /* STATEMACHINE_C_ */

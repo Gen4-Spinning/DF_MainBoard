@@ -27,15 +27,9 @@ extern UART_HandleTypeDef huart1;
 
 void IdleState(void){
 
-	/* depending on rotary switch you have two states - idle SETUP or idle RUN
-	 * in idle SETUP : you can do inching.
-	 * For inching, when u release the button inching stops.
+	/* yellow button is inching. when u release the button inching stops, when u press it runs.
 	 * red button does nothing in this state.
-	 *
-	 * in idle RUN :
 	 * green button starts the run
-	 * yellow does nothing
-	 * red does nothing
 	 *
 	 * also from this state only, you can go to the diagnostics or change the settings
 	 * and save. Only for Carding you can change even in run mode
@@ -55,49 +49,35 @@ void IdleState(void){
 			CalculateMachineParameters(&msp,&mcParams);
 			ReadySetupCommand_AllMotors(&msp,&mcParams);
 			//Reset Run machine Parameters
-			mcParams.currentMtrsRun = 0;
+			mcParams.currentMtrsRun = 0.01;
 
 			L.logRunStateChange = 1;
 			L.flushBuffer = 1;
 			S.oneTime  = 0;
 		}
 
-		if (S.idleMode == IDLE_SETUP){
+		//DO inching if in the yellow button is pressed
+		if ((usrBtns.yellowBtn == BTN_PRESSED) && (usrBtns.logicApplied == 0)){
+			usrBtns.logicApplied = 1;
+			uint8_t motors[] = {FR,BR,CREEL};
+			noOfMotors = 3;
+			response = SendCommands_To_MultipleMotors(motors,noOfMotors,START);
 
-			//DO inching if in this state
-			if ((usrBtns.yellowBtn == BTN_PRESSED) && (usrBtns.logicApplied == 0)){
-				usrBtns.logicApplied = 1;
-				uint8_t motors[] = {FR,BR};
-				noOfMotors = 2;
-				response = SendCommands_To_MultipleMotors(motors,noOfMotors,START);
-
-			}
-			if ((usrBtns.yellowBtn == BTN_IDLE) && (usrBtns.logicApplied == 1)){
-				usrBtns.logicApplied = 0;
-				// STOP INCHING
-				uint8_t motors[] = {FR,BR};
-				noOfMotors = 2;
-				response = SendCommands_To_MultipleMotors(motors,noOfMotors,EMERGENCY_STOP);
-			}
-
-			if (usrBtns.rotarySwitch == ROTARY_SWITCH_ON){
-				S.idleMode = IDLE_RUN;
-			}
 		}
 
-		if (S.idleMode == IDLE_RUN){
-			if (usrBtns.greenBtn == BTN_PRESSED){
-				usrBtns.greenBtn = BTN_IDLE;
-				if (S.HomingDone){
-					Log_ResetRunTimeRdngNos(); //
-					ChangeState(&S,RUN_STATE);
-					break;
-				}
-			}
+		if ((usrBtns.yellowBtn == BTN_IDLE) && (usrBtns.logicApplied == 1)){
+			usrBtns.logicApplied = 0;
+			// STOP INCHING
+			uint8_t motors[] = {FR,BR,CREEL};
+			noOfMotors = 3;
+			response = SendCommands_To_MultipleMotors(motors,noOfMotors,EMERGENCY_STOP);
+		}
 
-			if (usrBtns.rotarySwitch == ROTARY_SWITCH_OFF){
-				S.idleMode = IDLE_SETUP;
-			}
+		if (usrBtns.greenBtn == BTN_PRESSED){
+			usrBtns.greenBtn = BTN_IDLE;
+			Log_ResetRunTimeRdngNos(); //
+			ChangeState(&S,RUN_STATE);
+			break;
 		}
 
 		//----------- go to other places-------

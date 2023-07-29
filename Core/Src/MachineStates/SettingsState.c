@@ -19,9 +19,9 @@ void SettingsState(void){
 	uint8_t success = 0;
 
 	if (BT.information == REQ_SETTINGS_FROM_APP){
-		  BT_MC_generateSettingsMsg(&msp);
+		  uint8_t packetSize = BT_MC_generateSettingsMsg(&msp);
 		  while(S.BT_transmission_over != 1){};
-		  HAL_UART_Transmit_IT(&huart1,(uint8_t*)BufferTransmit,136);
+		  HAL_UART_Transmit_IT(&huart1,(uint8_t*)BufferTransmit,packetSize);
 		  S.BT_transmission_over = 0;
 	}
 
@@ -48,5 +48,8 @@ void SettingsState(void){
 	   * machine parameters struct in the idle state when you first enter it
 	   */
 
-	  ChangeState(&S,IDLE_STATE);
+	  ChangeState(&S,S.prev_state);
+	  if (S.current_state == RUN_STATE){ // if you go back to run state, then dont send the rampUp msg to the cylinders.
+		  S.oneTime = 0;
+	  }
 }
