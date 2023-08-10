@@ -13,6 +13,7 @@ void InitializeMachineSettings(machineSettingsTypeDef *ms){
     ms->lengthLimit_m = 1.1;
     ms->rampDownTime = 5;
     ms->rampDownTime = 5;
+    ms->creelTensionFactor = 1;
 }
 
 void CalculateMachineParameters(machineSettingsTypeDef *ms,machineParamsTypeDef *mp){
@@ -28,7 +29,7 @@ void CalculateMachineParameters(machineSettingsTypeDef *ms,machineParamsTypeDef 
 	mp->BR_MotorRPM = mp->BR_RPM * BR_TO_BRMOTOR_GEAR_RATIO;
 
 	mp->req_Creel_SurfaceSpeed = mp->req_BR_SurfaceSpeed;
-	mp->usedCreelDia = CREEL_PULLEY_DIA + SLIVER_WIDTH;
+	mp->usedCreelDia = (CREEL_PULLEY_DIA + SLIVER_WIDTH) / ms->creelTensionFactor;
 	float creelCirc = mp->usedCreelDia * 3.14;
 	mp->Creel_MotorRPM = mp->req_Creel_SurfaceSpeed*60.0/creelCirc;
 	mp->currentMtrsRun = 0;

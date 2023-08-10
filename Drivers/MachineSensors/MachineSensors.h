@@ -23,6 +23,8 @@ typedef struct {
 	uint8_t lappingSensorOneShot;
 
 	uint8_t sliverCutSensor;
+	uint8_t sliverCutTimerIncrementBool;
+	uint8_t slivercutSensorTimer;
 	uint8_t sliverCutOneShot;
 } SensorTypeDef;
 
@@ -32,7 +34,7 @@ uint8_t Sensor_whichTriggered(MCP23017_HandleTypeDef *mcp, MCP23017_PortB *which
 void Sensor_resetTriggeredStates(MCP23017_PortB *whichSensor);
 int8_t Sensor_GetTriggerValue(MCP23017_HandleTypeDef *mcp, MCP23017_PortB *sensorVal,uint8_t sensor);
 void LappingSensorMonitor(SensorTypeDef *s);
-
-
+int8_t Sensor_ReadValueDirectly(MCP23017_HandleTypeDef *mcp, MCP23017_PortB *sensorVal,uint8_t sensor);
+void SliverSensorMonitor(SensorTypeDef *s);
 
 #endif /* MACHINESENSORS_H_ */

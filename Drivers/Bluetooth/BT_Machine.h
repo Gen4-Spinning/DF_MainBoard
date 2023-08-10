@@ -17,6 +17,7 @@
 #define LENGTH_LIMIT_M_BT 0x72
 #define RAMPUP_BT 0x73
 #define RAMPDOWN_BT 0x74
+#define CREEL_TENSION_FACTOR_BT 0x75
 
 #define BT_FR 0x01
 #define BT_BR 0x02

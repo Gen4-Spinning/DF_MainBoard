@@ -23,7 +23,7 @@
 #define BR_TO_BRMOTOR_GEAR_RATIO 6.91
 #define BR_TO_SR_BREAK_DRAFT 1.5
 #define CREEL_PULLEY_DIA 55
-#define SLIVER_WIDTH 6
+#define SLIVER_WIDTH 14
 
 typedef struct machineSettings_Struct{
     int delivery_mMin;
@@ -31,6 +31,7 @@ typedef struct machineSettings_Struct{
     int lengthLimit_m;
     int rampUpTime;
     int rampDownTime;
+    float creelTensionFactor;
 
 }machineSettingsTypeDef;
 

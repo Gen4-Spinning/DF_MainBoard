@@ -14,7 +14,7 @@ uint8_t BT_MC_generateSettingsMsg(machineSettingsTypeDef *m){
 	  uint8_t eof_size  = 0;
 	  uint8_t initLength = 0;
 
-	  initLength = Init_TXBuf_Frame(SETTINGS_FROM_MC,SUBSTATE_NA,12);
+	  initLength = Init_TXBuf_Frame(SETTINGS_FROM_MC,SUBSTATE_NA,6);
 
 	  generateTLV_I(TLV_Buffer,DELIVERY_M_MIN_BT,m->delivery_mMin);
 	  add_TLVBuf_To_TxBuf(TLV_Buffer,TLV_INT,initLength+tlvSize);
@@ -31,6 +31,10 @@ uint8_t BT_MC_generateSettingsMsg(machineSettingsTypeDef *m){
 	  generateTLV_I(TLV_Buffer,RAMPUP_BT,m->rampUpTime);
 	  add_TLVBuf_To_TxBuf(TLV_Buffer,TLV_INT,initLength+tlvSize);
 	  tlvSize += TLV_INT;
+
+	  generateTLV_F(TLV_Buffer,CREEL_TENSION_FACTOR_BT,m->creelTensionFactor);
+	  add_TLVBuf_To_TxBuf(TLV_Buffer,TLV_FLOAT,initLength+tlvSize);
+	  tlvSize += TLV_FLOAT;
 
 	  generateTLV_I(TLV_Buffer,RAMPDOWN_BT,m->rampDownTime);
 	  add_TLVBuf_To_TxBuf(TLV_Buffer,TLV_INT,initLength+tlvSize);
@@ -76,9 +80,13 @@ uint8_t BT_MC_parse_Settings(machineSettingsTypeDef *mspBT){
     			mspBT->rampDownTime = T.value_int;
     			count += 1;
     			break;
+    		case CREEL_TENSION_FACTOR_BT:
+    			mspBT->creelTensionFactor = T.value_f;
+    			count += 1;
+    			break;
     	}
     }
-    if (count == 5){
+    if (count == 6){
     	allSettingsRecieved = 1;
     }
 
@@ -95,6 +103,7 @@ uint8_t BT_MC_Save_Settings(void){
 		msp.lengthLimit_m = msp_BT.lengthLimit_m;
 		msp.rampDownTime = msp_BT.rampDownTime;
 		msp.rampUpTime = msp_BT.rampUpTime;
+		msp.creelTensionFactor = msp_BT.creelTensionFactor;
 		//send success msg to APP
 	}
 	return !fail;

@@ -16,6 +16,7 @@ void ReadMachineSettingsFromEeprom(machineSettingsTypeDef *m)
 	m->lengthLimit_m = EE_ReadInteger(DF_LENGTH_LIMIT_M);
 	m->rampUpTime = EE_ReadInteger(RAMPUP_TIME_ADDR);
 	m->rampDownTime = EE_ReadInteger(RAMPDOWN_TIME_ADDR);
+	m->creelTensionFactor = EE_ReadFloat(CREEL_TENSION_ADDR);
 }
 
 
@@ -32,7 +33,8 @@ uint8_t WriteMachineSettingsIntoEeprom(machineSettingsTypeDef *m)
     HAL_Delay(2);
     dataWritten += EE_WriteInteger(m->rampDownTime,RAMPDOWN_TIME_ADDR);
     HAL_Delay(2);
-    if (dataWritten == 5)
+    dataWritten += EE_WriteFloat(m->creelTensionFactor,CREEL_TENSION_ADDR);
+    if (dataWritten == 6)
     	{return 0;}
     else{
     	return 1;}
@@ -50,7 +52,7 @@ uint8_t CheckMachineSettings(machineSettingsTypeDef* m){
 	if ((m->draft > 12.0f)||(m->draft < 5)){
 		return 0;
 	}
-	if ((m->lengthLimit_m > 1250)||(m->lengthLimit_m < 250)){
+	if ((m->lengthLimit_m > 1250)||(m->lengthLimit_m < 5)){
 		return 0;
 	}
 
@@ -58,6 +60,9 @@ uint8_t CheckMachineSettings(machineSettingsTypeDef* m){
 		return 0;
 	}
 	if ((m->rampDownTime > 15) || (m->rampDownTime < 3)){
+		return 0;
+	}
+	if ((m->creelTensionFactor > 5) || (m->creelTensionFactor < 0.5)){
 		return 0;
 	}
 
@@ -70,4 +75,5 @@ void LoadDefaultMachineSettings(machineSettingsTypeDef* m){
 	m->lengthLimit_m = DEFAULT_LENGTHLIMIT;
 	m->rampUpTime = DEFAULT_RAMPUP_TIME;
 	m->rampDownTime = DEFAULT_RAMPDOWN_TIME;
+	m->creelTensionFactor = DEFAULT_CREELTENSION_FACTOR;
 }

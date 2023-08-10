@@ -198,6 +198,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		  if (sensor.lappingTimerIncrementBool){
 			  sensor.lappingSensorTimer++;
 		  }
+		  if (sensor.sliverCutTimerIncrementBool){
+			  sensor.slivercutSensorTimer++;
+		  }
 	  }
   }
 
@@ -323,10 +326,13 @@ int main(void)
   if (MBE.EepromLoadValsGood == 0){
 	  LoadDefaultMachineSettings(&msp);
 	  //manualWrite
-	/*msp.spindleSpeed = 650;
-	  msp.tensionDraft = 8.0;
-	  msp.tpi = 1.2;
-	*/
+	  /*msp.delivery_mMin = 80;
+	  msp.draft = 8.0;
+	  msp.lengthLimit_m = 100;
+	  msp.rampUpTime = 8;
+	  msp.rampDownTime = 8;
+	  msp.creelTensionFactor  = 1;
+	  */
 	  MBE.defaults_eepromWriteFailed = WriteMachineSettingsIntoEeprom(&msp);
   }
   CalculateMachineParameters(&msp,&mcParams);
@@ -366,20 +372,14 @@ int main(void)
   //Start the 1000 msec Timer for checking if the CAN bus is Ok
   HAL_TIM_Base_Start_IT(&htim16);
 
-  sensor.lappingSensor = 0; // initial state
-  sensor.sliverCutSensor = 1;
+  //TODO : Read the state and set these values.
+  sensor.lappingSensor = Sensor_ReadValueDirectly(&hmcp,&mcp_portB_sensorVal,LAPPING_SENSOR); // initial state
+  sensor.sliverCutSensor = Sensor_ReadValueDirectly(&hmcp,&mcp_portB_sensorVal,CREEL_SLIVER_CUT_SENSOR);
 
   //SMPS - turn on the SMPS, wait a while to see if  short command.
-  SMPS_TurnOn();
+  SMPS_Init();
   HAL_Delay(1000);//contactor takes a long time to turn on.
-
-  /*uint8_t smps = (uint8_t)(HAL_GPIO_ReadPin(SMPS_OK_IP_GPIO_Port, SMPS_OK_IP_Pin));
-  if (smps == SMPS_OFF){
-	  ME.ErrorFlag = 1;
-	  ME_addErrors(&ME,ERR_SYSTEM_LEVEL_SOURCE, SYS_SMPS_ERROR, ERROR_SOURCE_SYSTEM,0); // maybe later find out which ACK failed.
-	  S.SMPS_switchOff = 1;
-  }*/
-
+  S.SMPS_cntrl = SMPS_TURNEDON;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -412,7 +412,9 @@ int main(void)
 	if (S.current_state == ERROR_STATE){
 		ErrorState();
 	}
-
+	if (S.current_state == FINISHED_STATE){
+		FinishState();
+	}
 
     /* USER CODE END WHILE */
 

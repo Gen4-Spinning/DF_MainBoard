@@ -66,9 +66,7 @@ void RunState(void){
 		}
 
 		if (usrBtns.rotarySwitch == ROTARY_SWITCH_ON){
-			if (sensor.sliverCutSensor == 0){
-				sensor.sliverCutOneShot = 1;
-			}
+			SliverSensorMonitor(&sensor);
 		}else{
 			sensor.sliverCutOneShot = 0;
 		}
@@ -163,8 +161,6 @@ void RunState(void){
 		} // closes if RUN PAUSED
 
 		LappingSensorMonitor(&sensor); // sets lapping sensor one shot, which is used in the run operating mode, to go to pause
-
-
 		//--------ways to go into Error State--------
 
 		//Error State
@@ -204,10 +200,10 @@ void RunState(void){
 		}
 
 		//TODO:TO STOP WHEN LENGTH FINISHED
-		/*if (mcParams.currentMtrsRun >= msp.lengthLimit_m){
+		if (mcParams.currentMtrsRun >= msp.lengthLimit_m){
 			ChangeState(&S,FINISHED_STATE);
 			break;
-		}*/
+		}
 
 	}//closes while
 
