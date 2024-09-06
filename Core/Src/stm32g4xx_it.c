@@ -382,8 +382,8 @@ void USART1_IRQHandler(void)
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */
-  if(RESET != __HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE)){   //Judging whether it is idle interruption
-	  __HAL_UART_CLEAR_IDLEFLAG(&huart1);                     //Clear idle interrupt sign (otherwise it will continue to enter interrupt)
+  if(__HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE)){   //Judging whether it is idle interruption
+	  __HAL_UART_CLEAR_IDLEFLAG(&huart1);             //Clear idle interrupt sign (otherwise it will continue to enter interrupt)
 	  UART_IDLECallback();                          //Call interrupt handler
   }
   /* USER CODE END USART1_IRQn 1 */
@@ -479,6 +479,14 @@ void UART_IDLECallback(void){
 				  S.BT_dataOK = BT_MC_parse_Settings(&msp_BT); // we have to parse inside this function because it needs buffer Rec
 				  S.switchState = TO_SETTINGS; // only check for this in IDLE STATE
 			  }
+			  else if (BT.information == PID_REQUEST){
+				  S.BT_dataOK = BT_PID_parse_Request(&pid_BT);
+				  S.switchState = TO_SETTINGS;
+			  }
+			  else if (BT.information == PID_NEW_VALS){
+				  S.BT_dataOK = BT_PID_parse_NewSettings(&pid_BT);
+				  S.switchState = TO_SETTINGS;
+			  }
 			  else if (BT.information == DIAGNOSTICS_FROM_APP){
 				  //7E240401064102014002014204001E4304005A7E
 				  if (BT.subState == BT_DIAGNOSTIC_RUN){
@@ -499,7 +507,7 @@ void UART_IDLECallback(void){
 					  S.BT_runInfowhichMotor = GetMotorId_from_CarousalID(S.BT_runInfoToSend);
 				  }
 			  }
-			  else if (BT.information == RESET_LENGTH_COUNTER_CARDING_DF){
+			  else if (BT.information == RESET_LENGTH_COUNTER_DF){
 				  mcParams.currentMtrsRun = 0;
 				  HAL_UART_Transmit_IT(&huart1,(uint8_t*)SAVINGSUCCESS,6);
 			  }

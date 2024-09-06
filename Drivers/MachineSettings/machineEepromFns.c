@@ -56,10 +56,10 @@ uint8_t CheckMachineSettings(machineSettingsTypeDef* m){
 		return 0;
 	}
 
-	if ((m->rampUpTime > 15) || (m->rampUpTime < 3)){
+	if ((m->rampUpTime > 15) || (m->rampUpTime < 1)){
 		return 0;
 	}
-	if ((m->rampDownTime > 15) || (m->rampDownTime < 3)){
+	if ((m->rampDownTime > 15) || (m->rampDownTime < 1)){
 		return 0;
 	}
 	if ((m->creelTensionFactor > 5) || (m->creelTensionFactor < 0.5)){

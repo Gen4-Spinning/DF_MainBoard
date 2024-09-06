@@ -28,7 +28,7 @@ IOCON = 00100000 = 0x20 */
  * = 00001111 = 0x0F
  *
  * IPOLB register ( 1 means GPIO register will reflect inverted value of pin)
- * = 0x00000000 = 0x00 - we dont want inveted values
+ * = 0x00000000 = 0x00 - we dont want inverted values
  *
  * GPPUB register (1 means 10K pullup on input pins)
  * = 0x00  ( we have external pullups)
@@ -65,6 +65,11 @@ IOCON = 00100000 = 0x20 */
 #define IODIRB_DEFAULT 0x0F
 #define IOPOLB_DEFAULT 0x00
 #define GPPUB_DEFAULT 0x00
+
+#define IODIRA_DEFAULT 0x0F
+#define IOPOLA_DEFAULT 0x00
+#define GPPUA_DEFAULT 0x00
+
 
 #define OLATB_ALL_OP_ON  0xF0
 #define OLATB_ALL_OP_OFF 0x00

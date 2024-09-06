@@ -25,4 +25,10 @@
 #define DEFAULT_RAMPDOWN_TIME 6	// in sec
 #define DEFAULT_CREELTENSION_FACTOR 1
 
+//defaults for piecing
+#define PIECING_DELIVERY_M_MIN 20
+#define PIECING_RAMPUP_TIME 2
+#define PIECING_RAMPDOWN_TIME 2
+
+
 #endif /* INC_EEPROMSETTINGS_H_ */

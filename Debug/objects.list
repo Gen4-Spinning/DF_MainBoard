@@ -18,6 +18,7 @@
 "./Drivers/Bluetooth/BT_Console.o"
 "./Drivers/Bluetooth/BT_Fns.o"
 "./Drivers/Bluetooth/BT_Machine.o"
+"./Drivers/DriveDataRequest/DataRequest.o"
 "./Drivers/Eeprom/Eeprom.o"
 "./Drivers/FDCAN/FDCAN.o"
 "./Drivers/FDCAN/MotherBoard/CAN_MotherBoardFns.o"

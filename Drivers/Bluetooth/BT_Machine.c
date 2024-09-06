@@ -47,7 +47,95 @@ uint8_t BT_MC_generateSettingsMsg(machineSettingsTypeDef *m){
 
 }
 
-//FLYER
+uint8_t BT_MC_generatePIDValuesMsg(uint16_t Kp,uint16_t Ki,uint16_t FF, uint16_t SO){
+		char TLV_Buffer[12];
+		uint8_t tlvSize = 0;
+		uint8_t eof_size  = 0;
+		uint8_t initLength = 0;
+
+		initLength = Init_TXBuf_Frame(PID_RESPONSE_TO_REQUEST,SUBSTATE_NA,4);
+
+		generateTLV_I(TLV_Buffer,KP_TYPE,Kp);
+		add_TLVBuf_To_TxBuf(TLV_Buffer,TLV_INT,initLength+tlvSize);
+		tlvSize += TLV_INT;
+
+		generateTLV_I(TLV_Buffer,KI_TYPE,Ki);
+		add_TLVBuf_To_TxBuf(TLV_Buffer,TLV_INT,initLength+tlvSize);
+		tlvSize += TLV_INT;
+
+		generateTLV_I(TLV_Buffer,FF_TYPE,FF);
+		add_TLVBuf_To_TxBuf(TLV_Buffer,TLV_INT,initLength+tlvSize);
+		tlvSize += TLV_INT;
+
+		generateTLV_I(TLV_Buffer,SO_TYPE,SO);
+		add_TLVBuf_To_TxBuf(TLV_Buffer,TLV_INT,initLength+tlvSize);
+		tlvSize += TLV_INT;
+
+		eof_size = addEOF(initLength+tlvSize);
+		correctLengthInFrame(initLength,tlvSize,eof_size);
+
+		return initLength + tlvSize + eof_size;
+
+}
+
+uint8_t BT_PID_parse_Request(mcPIDSettings *pBT){
+	TLVStruct_TypeDef T;
+	uint8_t TLV_start = 10;
+	uint8_t tlvSize = 0;
+	uint8_t count = 0;
+	for (int i=0;i<BT.attributeCnt;i++){
+		tlvSize = parseTLV(&T,TLV_start);
+		TLV_start += tlvSize;
+		switch (T.type){
+			case PID_REQUEST_WHICH_MOTOR:
+				pBT->motorID = T.value_int;
+				count += 1;
+				break;
+		}
+	}
+	return count; // 1 if ok, 0 if not
+}
+
+uint8_t BT_PID_parse_NewSettings(mcPIDSettings *pBT){
+	//Buffer Rec index 10 onwards is TLVs till 10 + TlvsLength
+	TLVStruct_TypeDef T;
+	uint8_t TLV_start = 10;
+	uint8_t tlvSize = 0;
+	uint8_t count = 0;
+	uint8_t allSettingsRecieved = 0;
+    for (int i=0;i<BT.attributeCnt;i++){
+    	tlvSize = parseTLV(&T,TLV_start);
+    	TLV_start += tlvSize;
+    	switch (T.type){
+    		case PID_REQUEST_WHICH_MOTOR:
+    			pBT->motorID = (uint8_t)T.value_int;
+    			count += 1;
+    			break;
+    		case KP_TYPE:
+    			pBT->Kp = T.value_int;
+    			count += 1;
+    			break;
+    		case KI_TYPE:
+    			pBT->Ki = T.value_int;
+    			count += 1;
+    			break;
+    		case FF_TYPE:
+    			pBT->FF = T.value_int;
+    			count += 1;
+    			break;
+    		case SO_TYPE:
+    			pBT->SO = T.value_int;
+    			count += 1;
+    			break;
+    	}
+    }
+    if (count == 5){
+    	allSettingsRecieved = 1;
+    }
+
+    return allSettingsRecieved;
+}
+
 uint8_t BT_MC_parse_Settings(machineSettingsTypeDef *mspBT){
 	//Buffer Rec index 10 onwards is TLVs till 10 + TlvsLength
 	TLVStruct_TypeDef T;

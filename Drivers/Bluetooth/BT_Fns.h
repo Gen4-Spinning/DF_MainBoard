@@ -40,8 +40,11 @@
 #define CAROUSAL_INFO 0x07
 #define GBCALIB_CMD_FROM_APP 0x08
 #define GBCALIB_DATA_FROM_MB 0x09
-#define RESET_LENGTH_COUNTER_CARDING_DF 0x0A
+#define RESET_LENGTH_COUNTER_DF 0x0A
 #define TOGGLE_LOGGING 0x0C
+#define PID_REQUEST 0x0D
+#define PID_RESPONSE_TO_REQUEST 0x0E
+#define PID_NEW_VALS 0x0F
 
 //subStates
 #define SUBSTATE_NA 0x99
@@ -66,6 +69,12 @@
 
 //vars to identify what data is going to be sent in run mode
 //data to be recieved from app carousel to define whats going to be sent back
+#define RUN_FLYER_DATA 0x01
+#define RUN_BOBBIN_DATA 0x02
+#define RUN_FR_DATA 0x03
+#define RUN_BR_DATA 0x04
+#define RUN_LEFT_LIFT_DATA 0x05
+#define RUN_RIGHT_LIFT_DATA 0x06
 #define RUN_PRODUCTION_DATA 0x0A
 
 #define RUN_LEFT_LIFT_DIST 0x01
@@ -83,7 +92,6 @@
 #define RUN_CARDING_DLVRY_MTR_MIN 0x0D
 #define RUN_DF_OUTPUT_LENGTH 0x0E
 
-
 #define ERR_REASON 0x01
 #define ERR_SOURCE 0x02
 #define ERR_CODE 0x03
@@ -93,6 +101,13 @@
 #define BT_GB_CALIB_STOP 2
 #define BT_GB_CALIB_SAVE_LEFT 3
 #define BT_GB_CALIB_SAVE_RIGHT 4
+
+//FOR PID settings
+#define PID_REQUEST_WHICH_MOTOR 1
+#define KP_TYPE 0x02
+#define KI_TYPE 0x03
+#define FF_TYPE 0x04
+#define SO_TYPE 0x05
 
 //diagnostic SETTINGS
 #define MOTOR_ID 0x40
@@ -113,8 +128,6 @@
 
 #define BT_DEFAULT_DIR 0
 #define BT_REVERSE_DIR 1
-
-
 
 #define SAVINGFAILURE "7E007E"
 #define SAVINGSUCCESS "7E017E"

@@ -14,12 +14,14 @@
 #include "Ack.h"
 #include "userButtons.h"
 #include "FDCAN.h"
+#include "TowerLamp.h"
 #include "SMPS.h"
 
 #include "MachineErrors.h"
 #include "BT_Fns.h"
 #include "BT_Machine.h"
 #include "BT_Console.h"
+#include "DataRequest.h"
 
 uint8_t doActivity = 0 ;
 
@@ -33,15 +35,25 @@ uint8_t stopSMPSNow = 0;
 
 uint8_t motors[] = {BR};
 uint8_t noOfMotors = 1;
+uint8_t sendBTCmd,btReturn,btCmd,BT_runDbg = 0;
 
 uint8_t BT_errDbg = 0;
 uint8_t BT_pauseDbg = 0;
 uint8_t BTpacketSize = 0;
 uint16_t errSource1 = 0 ;
 
+uint8_t testTowerLamp = 0;
 uint8_t SMPS_on,SMPS_off;
-uint8_t sendBTCmd,btReturn,btCmd,BT_runDbg = 0;
+uint8_t canTest = 0;
+
+uint8_t requestPID = 0 ;
+uint8_t updatePID = 0;
+uint8_t PIDmotorNo = 0;
+uint8_t PID_DBG_MSG = 0;
+uint8_t PIDchk = 0;
+
 extern UART_HandleTypeDef huart1;
+extern DataReq DR;
 
 void DebugState(void){
 
@@ -57,7 +69,7 @@ void DebugState(void){
 			SMPS_off = 0;
 		}
 
-			if(dbg_Start){
+		if(dbg_Start){
 			response = SendCommands_To_MultipleMotors(motors,noOfMotors,START);
 			dbg_Start = 0;
 		}
@@ -77,6 +89,12 @@ void DebugState(void){
 			dbg_stop = 0;
 		}
 
+
+		if (canTest){
+			SendCommands_To_MultipleMotors(motors,noOfMotors,START);
+			HAL_Delay(1000);
+			canTest = 0;
+		}
 
 		//BT command mode commands
 		if (sendBTCmd){
@@ -119,6 +137,57 @@ void DebugState(void){
 			break;
 		}
 
+
+		if (testTowerLamp){
+			TowerLamp_SetState(&hmcp, &mcp_portB,BUZZER_OFF,RED_OFF,GREEN_OFF,AMBER_ON);
+			TowerLamp_ApplyState(&hmcp,&mcp_portB);
+			HAL_Delay(5000);
+
+			TowerLamp_SetState(&hmcp, &mcp_portB,BUZZER_OFF,RED_OFF,GREEN_ON,AMBER_OFF);
+			TowerLamp_ApplyState(&hmcp,&mcp_portB);
+			HAL_Delay(5000);
+
+			TowerLamp_SetState(&hmcp, &mcp_portB,BUZZER_OFF,RED_ON,GREEN_OFF,AMBER_OFF);
+			TowerLamp_ApplyState(&hmcp,&mcp_portB);
+			HAL_Delay(5000);
+
+			TowerLamp_SetState(&hmcp, &mcp_portB,BUZZER_ON,RED_ON,GREEN_ON,AMBER_ON);
+			TowerLamp_ApplyState(&hmcp,&mcp_portB);
+			HAL_Delay(5000);
+
+			TowerLamp_SetState(&hmcp, &mcp_portB,BUZZER_OFF,RED_OFF,GREEN_OFF,AMBER_OFF);
+			TowerLamp_ApplyState(&hmcp,&mcp_portB);
+			HAL_Delay(5000);
+		}
+
+
+		if (PIDchk==1){
+			if (requestPID){
+				SendDataRequest(&DR,PID_SETTINGS_REQUEST,PIDmotorNo);
+			}else if(updatePID){
+				SendDataRequest(&DR,PID_SETTINGS_UPDATE,PIDmotorNo);
+			}
+			else{}
+
+			//wait till response is recieved or timed out
+			while((DR.timer < DATA_REQUEST_TIMEOUT_SEC) && (DR.responseRecieved == 0)){}
+
+			if (DR.responseRecieved == 0){
+				// no response error!
+				PID_DBG_MSG = 0;
+			}else{
+				//parse responsed by CAN
+				PID_DBG_MSG = 1;
+			}
+			DR.requestSent = 0;
+			DR.requestType = 0;
+			DR.motorName = 0;
+			DR.timer = 0;
+
+			requestPID = 0;
+			updatePID = 0;
+			PIDchk = 0;
+		}
 
 	}//closes while
 

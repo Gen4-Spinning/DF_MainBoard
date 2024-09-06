@@ -17,24 +17,21 @@
 
 #define MOTORSTATE_FUNCTIONID			0x01
 #define ERROR_FUNCTIONID				0x02
-#define DRIVECHECK_FUNCTIONID			0x03
-#define DRIVECHECK_RESPONSE_FUNCTIONID	0x04
-#define SETUP_CALLBACK_FUNCTIONID		0x05
-#define TUNINGDATA_FUNCTIONID			0x06
+
+#define DATA_REQUEST_RESPONSE 			0x05 // after we make a request , the response ID
+
 #define RUNSETUPDATA_FUNCTIONID			0x07
 #define ANALYSISDATA_FUNCTIONID			0x08
 #define RUNTIMEDATA_FUNCTIONID			0x09
 #define DIAGNOSTICSDATA_FUNCTIONID 		0x0A
-#define LIFTRUNTIMEDATA_FUNCTIONID		0x0C
+
 #define CHANGETARGET_FUNCTIONID			0x0D
-#define LIFTSTROKEOVER_FUNCTIONID		0x0E
 #define ACKFRAME_FUNCTIONID				0x0F
-#define LIFTANALYSIS_FUCTIONID			0x11
-#define HOMINGDONEFRAME_FUNCTIONID		0x13
 #define DIAGNOSTICSDONEFRAME_FUNCTIONID	0X14
-#define LIFTNEWSTROKEFRAME_FUNCTIONID	0x15
-#define LIFTSTARTSENDINGGBD_FUNCTIONID	0x16
-#define LIFTGBD_FUNCTIONID				0x17//GBD means gearbox data
+
+#define CYLINDEREXTENDEDDATA_FUNCTIONID 0x0B
+#define DRIVE_CAN_CHK_REQUEST 0x18
+#define PID_UPDATE_RESPONSE   0x1B
 
 #define PRIORITY1 0x06//priority1 has the highest priority
 #define PRIORITY2 0x0A
@@ -55,7 +52,7 @@ extern FDCAN_RxHeaderTypeDef   RxHeader;
 extern FDCAN_TxHeaderTypeDef   TxHeader;
 
 extern uint8_t TxData[16];
-extern uint8_t RxData[16];
+extern uint8_t RxData[32];
 extern uint32_t functionID;
 extern uint32_t source_address;
 

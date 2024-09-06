@@ -17,7 +17,7 @@ uint8_t TxData[16];
 
 FDCAN_TxHeaderTypeDef   TxHeader;
 FDCAN_RxHeaderTypeDef   RxHeader;
-uint8_t RxData[16];
+uint8_t RxData[32];
 
 
 void FDCAN_TxInit(void)

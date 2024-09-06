@@ -6,16 +6,7 @@
  */
 #include "main.h"
 #include "stm32g4xx_hal.h"
-#include "FDCAN.h"
 #include "CAN_MotherBoard.h"
-#include "CommonConstants.h"
-#include "Struct.h"
-#include "StateMachine.h"
-#include "machineSettings.h"
-#include "MachineErrors.h"
-#include "SysObserver.h"
-#include "Log.h"
-#include "Ack.h"
 
 /* Mother Board Funs*/
 
@@ -59,6 +50,13 @@ void FDCAN_SendDiagnostics_ToMotor(uint8_t destination,DiagnosticsTypeDef *d)
 	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, TxData);
 }
 
+void FDCAN_sendConsoleCHK_Response(uint8_t destination){
+	TxHeader.Identifier =(0xE19<<16)|(destination<<8)|0x01;
+	TxHeader.DataLength = FDCAN_DLC_BYTES_1;
+	TxData[0]=1;
+	while(HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1)==0){};
+	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, TxData);
+}
 
 void FDCAN_sendChangeTarget_ToMotor(uint8_t destination, uint16_t newTarget, uint16_t transitionTime_ms){
 	TxHeader.Identifier =(0xA0D<<16)|(destination<<8)|0x01;
@@ -67,6 +65,14 @@ void FDCAN_sendChangeTarget_ToMotor(uint8_t destination, uint16_t newTarget, uin
 	TxData[1]=newTarget;
 	TxData[2]=transitionTime_ms>>8;
 	TxData[3]=transitionTime_ms;
+	while(HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1)==0){};
+	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, TxData);
+}
+
+void FDCAN_sendDataRequest_ToMotor(uint8_t destination,uint8_t requestType){
+	TxHeader.Identifier =(0xA06<<16)|(destination<<8)|0x01;
+	TxHeader.DataLength = FDCAN_DLC_BYTES_1;
+	TxData[0]= requestType ;
 	while(HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1)==0){};
 	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, TxData);
 }
@@ -80,45 +86,52 @@ void FDCAN_Recieve_ACKFromMotors(uint8_t sourceAddress){
 	}
 }
 
-void FDCAN_parseForMotherBoard()
-{	uint8_t motorID;
-	functionID=((RxHeader.Identifier)&0xFF0000)>>16;
-	source_address=(RxHeader.Identifier)&0xFF;
-	switch (functionID) {
-		case ERROR_FUNCTIONID:
-			FDCAN_Recieve_ErrorsFromMotors(source_address);
-			break;
-		case ACKFRAME_FUNCTIONID:
-			FDCAN_Recieve_ACKFromMotors(source_address);
-			break;
-		case RUNTIMEDATA_FUNCTIONID:
-			motorID = GetMotorID_from_CANAddress(source_address);
-			FDCAN_Recieve_RunDataFromMotors(functionID,motorID);
-			SO_incrementCANCounter(&SO,motorID);
-			break;
-		case DIAGNOSTICSDONEFRAME_FUNCTIONID: // only stop the can Observer when u get the diag done frame.
-			SO_disableAndResetCANObservers(&SO);
-			break;
-	}
+void FDCAN_Recieve_DataResponse(DataReq *d, uint8_t motorID){
+	d->p.motorID = RxData[0];
+	d->p.Kp_motorID = ((RxData[1]<< 8 ) | RxData[2]);
+	d->p.Ki_motorID = ((RxData[3]<< 8 ) | RxData[4]);
+	d->p.FF_motorID = ((RxData[5]<< 8 ) | RxData[6]);
+	d->p.startOffset_motorID = (RxData[7]<< 8 ) | RxData[8];
 }
 
+void FDCAN_sendPID_Update_toMotor(uint8_t destination){
+	TxHeader.Identifier =(0xE1A<<16)|(destination<<8)|0x01;
+	TxHeader.DataLength = FDCAN_DLC_BYTES_12;
+	TxData[0]=DR.requestType;
+	uint16_t temp = DR.p.Kp_motorID;
+	TxData[1]=temp>>8;
+	TxData[2]=temp;
+	temp = DR.p.Ki_motorID;
+	TxData[3]=temp>>8;
+	TxData[4]=temp;
+	temp = DR.p.FF_motorID;
+	TxData[5]=temp>>8;
+	TxData[6]=temp;
+	temp = DR.p.startOffset_motorID;
+	TxData[7]=temp>>8;
+	TxData[8]=temp;
+	TxData[9]=0;
+    TxData[10]=0;
+    TxData[11]=0;
+	while(HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1)==0){};
+	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, TxData);
+}
 
-void FDCAN_Recieve_RunDataFromMotors(uint8_t functionID,uint8_t motorID){
+void FDCAN_Recieve_RunDataFromMotors(uint8_t motorID){
 
-	/*TRPM = 2 Bytes
-	 *PRPM = 2 Bytes
-	 *APWMD = 2 Bytes
-	 *RUNTIME DF:
-	 *FETTEMP = 1 Byte
-	 *MOTTEMP = 1 Byte
-	 *CURRENT = 2 Bytes Raw Value
-	 *VOLTAGE = 2 Bytes Raw Value
-	 * ANALYSIS DF:
-	 *  ProportionalTerm = 2 Bytes
-	 *  IntegralTerm = 2 Bytes
-	 *  FeedForward = 2 Bytes
-	*/
-	if (motorID <= 6){		//
+//	TRPM = 2 Bytes
+//	 *PRPM = 2 Bytes
+//	 *APWMD = 2 Bytes
+//	 *RUNTIME DF:
+//	 *FETTEMP = 1 Byte
+//	 *MOTTEMP = 1 Byte
+//	 *CURRENT = 2 Bytes Raw Value
+//	 *VOLTAGE = 2 Bytes Raw Value
+//	 * ANALYSIS DF:
+//	 *  ProportionalTerm = 2 Bytes
+//	 *  IntegralTerm = 2 Bytes
+//	 *  FeedForward = 2 Bytes
+	if (motorID <= 6){
 		R[motorID].rdngNo ++;
 		R[motorID].targetRPM = (RxData[0]<< 8 ) | RxData[1];
 		R[motorID].presentRPM = (RxData[2]<< 8 ) | RxData[3];
@@ -142,7 +155,7 @@ void FDCAN_Recieve_RunDataFromMotors(uint8_t functionID,uint8_t motorID){
 
 }
 
-void FDCAN_Recieve_RunDataFromLiftMotors(uint8_t functionID,uint8_t motorID)
+/*void FDCAN_Recieve_RunDataFromLiftMotors(uint8_t functionID,uint8_t motorID)
 {
 	R[motorID].rdngNo ++;
 	R[motorID].targetPosition=(float)(((RxData[0]<<8)|RxData[1])/100.0);
@@ -162,8 +175,7 @@ void FDCAN_Recieve_RunDataFromLiftMotors(uint8_t functionID,uint8_t motorID)
 	}
 
 }
-
-
+*/
 
 void FDCAN_Recieve_ErrorsFromMotors(uint8_t sourceAddress)
 {
@@ -174,3 +186,49 @@ void FDCAN_Recieve_ErrorsFromMotors(uint8_t sourceAddress)
 	uint16_t motorErrReason = FindTopMotorError(&ME,temp);
 	ME_addErrors(&ME,ERR_MOTOR_SOURCE,motorErrReason,motorID, temp);
 }
+
+void FDCAN_parseForMotherBoard(void)
+{	uint8_t motorID;
+	functionID=((RxHeader.Identifier)&0xFF0000)>>16;
+	source_address=(RxHeader.Identifier)&0xFF;
+	switch (functionID) {
+		case ERROR_FUNCTIONID:
+			FDCAN_Recieve_ErrorsFromMotors(source_address);
+			break;
+		case ACKFRAME_FUNCTIONID:
+			FDCAN_Recieve_ACKFromMotors(source_address);
+			break;
+		case RUNTIMEDATA_FUNCTIONID:
+			motorID = GetMotorID_from_CANAddress(source_address);
+			FDCAN_Recieve_RunDataFromMotors(motorID);
+			SO_incrementCANCounter(&SO,motorID);
+			break;
+		case DIAGNOSTICSDONEFRAME_FUNCTIONID: // only stop the can Observer when u get the diag done frame.
+			SO_disableAndResetCANObservers(&SO);
+			break;
+		case DRIVE_CAN_CHK_REQUEST:
+			FDCAN_sendConsoleCHK_Response(source_address);
+			break;
+		case DATA_REQUEST_RESPONSE:
+			if (DR.requestSent == 1){
+				if (DR.requestType == PID_SETTINGS_REQUEST){
+					motorID = GetMotorID_from_CANAddress(source_address);
+					FDCAN_Recieve_DataResponse(&DR,motorID);
+					DR.responseRecieved = 1;
+				}
+			}
+			break;
+		case PID_UPDATE_RESPONSE:
+			if (DR.requestSent == 1){
+				if (RxData[0] == 1){
+					DR.responseSuccess = 1;
+				}else{
+					DR.responseSuccess = 0;
+				}
+				DR.responseRecieved = 1;
+			}
+			break;
+
+	}
+}
+

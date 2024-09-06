@@ -58,6 +58,9 @@ void IdleState(void){
 
 		//DO inching if in the yellow button is pressed
 		if ((usrBtns.yellowBtn == BTN_PRESSED) && (usrBtns.logicApplied == 0)){
+			CalculateMachineParameters(&ps,&mcParams);
+			ReadySetupCommand_AllMotors(&ps,&mcParams);
+
 			usrBtns.logicApplied = 1;
 			uint8_t motors[] = {FR,BR,CREEL};
 			noOfMotors = 3;

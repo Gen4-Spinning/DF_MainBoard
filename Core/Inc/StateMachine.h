@@ -15,10 +15,11 @@
 #define IDLE_RUN 2
 
 
-#define RUN_OPERATING 1
-#define RUN_PAUSED	2
-#define RUN_STOPPED 3
-#define RUN_OVER 4
+#define RUN_RAMPUP 1
+#define RUN_ALL 2
+#define RUN_PAUSED	3
+#define RUN_STOPPED 4
+#define RUN_OVER 5
 
 #define TO_SETTINGS 1
 #define TO_DIAGNOSTICS 2
@@ -68,6 +69,5 @@ void FinishState(void);
 
 void InitializeState_TypeDef(StateTypeDef *s);
 void ChangeState(StateTypeDef *s, uint8_t newState);
-void ResetHomingState(StateTypeDef *s);
 
 #endif /* INC_STATEMACHINE_H_ */

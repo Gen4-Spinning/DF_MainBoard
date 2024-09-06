@@ -25,6 +25,7 @@ Core/Src \
 Core/Src/MachineStates \
 Core/Startup \
 Drivers/Bluetooth \
+Drivers/DriveDataRequest \
 Drivers/Eeprom \
 Drivers/FDCAN \
 Drivers/FDCAN/MotherBoard \

@@ -118,7 +118,22 @@ void ErrorState(void){
 			Log_DoOneCycle();
 		}
 
+
 		//CANT EXIT FROM THIS STATE
+		//FOR CHENNAI: allow exit from this state by presing red button.
+		if (usrBtns.redBtn == BTN_PRESSED){
+			usrBtns.redBtn = BTN_IDLE;
+			S.runMode = RUN_STOPPED ;
+			SO_disableAndResetCANObservers(&SO);
+
+			//beep once when we go to idle
+			TowerLamp_SetState(&hmcp,&mcp_portB,BUZZER_ON,RED_OFF,GREEN_OFF,AMBER_OFF);
+			TowerLamp_ApplyState(&hmcp,&mcp_portB);
+			HAL_Delay(1000); // to hear the beep
+
+			ChangeState(&S,IDLE_STATE);
+			break;
+		}
 
 	}//closes while
 

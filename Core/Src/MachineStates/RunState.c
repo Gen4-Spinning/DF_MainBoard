@@ -44,12 +44,14 @@ void RunState(void){
 			//send the start commands
 			uint8_t motors[] = {FR,BR,CREEL};
 			noOfMotors = 3;
+			CalculateMachineParameters(&msp,&mcParams);
+			ReadySetupCommand_AllMotors(&msp,&mcParams);
 			response = SendCommands_To_MultipleMotors(motors,noOfMotors,START);
 			if (response!= 2){
 				SO_enableCANObservers(&SO,motors,noOfMotors);
 			}
 
-			S.runMode = RUN_OPERATING;
+			S.runMode = RUN_ALL;
 
 			Log_setUpLogging(&L,motors,noOfMotors);
 			Log_ResetBufferIndex(&L);
@@ -71,7 +73,7 @@ void RunState(void){
 			sensor.sliverCutOneShot = 0;
 		}
 
-		if (S.runMode == RUN_OPERATING){
+		if (S.runMode == RUN_ALL){
 			if ((usrBtns.yellowBtn == BTN_PRESSED) || (sensor.lappingSensorOneShot) || (sensor.sliverCutOneShot)){
 				usrBtns.yellowBtn = BTN_IDLE;
 				//Pause
@@ -116,7 +118,6 @@ void RunState(void){
 				HAL_Delay(1000); // to hear the beep
 
 				ChangeState(&S,IDLE_STATE);
-				SO_Reset_InitialLiftPosRecieved(&SO);
 				break;
 			}
 
@@ -128,14 +129,16 @@ void RunState(void){
 				//RESUME
 				uint8_t motors[] = {FR,BR,CREEL};
 				noOfMotors = 3;
-				response = SendCommands_To_MultipleMotors(motors,noOfMotors,RESUME);
+				CalculateMachineParameters(&msp,&mcParams);
+				ReadySetupCommand_AllMotors(&msp,&mcParams);
+				response = SendCommands_To_MultipleMotors(motors,noOfMotors,START);
 
 				//TODO - later make it such that once the CAN starts it never needs to stop.
 				// so we will not have this statement.
 				if (response!= 2){
 					SO_enableCANObservers(&SO,motors,noOfMotors);
 				}
-				S.runMode = RUN_OPERATING;
+				S.runMode = RUN_ALL;
 
 				TowerLamp_SetState(&hmcp, &mcp_portB,BUZZER_OFF,RED_OFF,GREEN_ON,AMBER_OFF);
 				TowerLamp_ApplyState(&hmcp,&mcp_portB);
@@ -147,6 +150,8 @@ void RunState(void){
 				usrBtns.logicApplied = 1;
 				uint8_t motors[] = {FR,BR,CREEL};
 				noOfMotors = 3;
+				CalculateMachineParameters(&ps,&mcParams);
+				ReadySetupCommand_AllMotors(&ps,&mcParams);
 				response = SendCommands_To_MultipleMotors(motors,noOfMotors,START);
 
 			}
@@ -158,9 +163,26 @@ void RunState(void){
 				noOfMotors = 3;
 				response = SendCommands_To_MultipleMotors(motors,noOfMotors,EMERGENCY_STOP);
 			}
+
+			//for debugging in chennai, remove for production?
+			//In pause if you press red button it takes you back to idle
+			// stop btn
+			if (usrBtns.redBtn == BTN_PRESSED){
+				usrBtns.redBtn = BTN_IDLE;
+				S.runMode = RUN_STOPPED ;
+				SO_disableAndResetCANObservers(&SO);
+
+				//beep once when we go to idle
+				TowerLamp_SetState(&hmcp,&mcp_portB,BUZZER_ON,RED_OFF,GREEN_OFF,AMBER_OFF);
+				TowerLamp_ApplyState(&hmcp,&mcp_portB);
+				HAL_Delay(1000); // to hear the beep
+
+				ChangeState(&S,IDLE_STATE);
+				break;
+			}
 		} // closes if RUN PAUSED
 
-		LappingSensorMonitor(&sensor); // sets lapping sensor one shot, which is used in the run operating mode, to go to pause
+		//LappingSensorMonitor(&sensor); // sets lapping sensor one shot, which is used in the run operating mode, to go to pause
 		//--------ways to go into Error State--------
 
 		//Error State
@@ -182,7 +204,7 @@ void RunState(void){
 
 		// 500ms timer.
 		if ((S.BT_sendState == 1) && (S.BT_transmission_over == 1)){
-			if (S.runMode == RUN_OPERATING ){
+			if (S.runMode == RUN_ALL ){
 				BTpacketSize = BT_MC_generateStatusMsg(BT_RUN);
 			}else{
 				BTpacketSize = BT_MC_generateStatusMsg(BT_PAUSE);

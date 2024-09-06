@@ -23,17 +23,6 @@ void ReadySetupCommand_AllMotors(machineSettingsTypeDef *ms,machineParamsTypeDef
 
 }
 
-void Modify_Setup_ForInching(void){
-	SU[FR].RDT = 2;
-	SU[BR].RDT = 2;
-}
-
-void Reset_SetupCommands_afterInching(machineSettingsTypeDef *ms){
-	SU[FR].RDT = ms->rampDownTime;
-	SU[BR].RDT = ms->rampDownTime;
-}
-
-
 
 uint8_t  SendCommands_To_MultipleMotors(uint8_t *motorList,uint8_t motorArraySize,uint8_t command){
 	/* Returns 0 if the command has ran into Ack errors and we have finally sent a STOP command/ or we ve just send a stop Command.

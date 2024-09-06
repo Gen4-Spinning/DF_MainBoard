@@ -24,6 +24,7 @@ RM := rm -rf
 -include Drivers/FDCAN/MotherBoard/subdir.mk
 -include Drivers/FDCAN/subdir.mk
 -include Drivers/Eeprom/subdir.mk
+-include Drivers/DriveDataRequest/subdir.mk
 -include Drivers/Bluetooth/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/MachineStates/subdir.mk
@@ -50,34 +51,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := MainBoard_DF
+BUILD_ARTIFACT_NAME := MainBoard_DF_v7
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-MainBoard_DF.elf \
+MainBoard_DF_v7.elf \
 
 MAP_FILES += \
-MainBoard_DF.map \
+MainBoard_DF_v7.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-MainBoard_DF.list \
+MainBoard_DF_v7.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: MainBoard_DF.elf secondary-outputs
+main-build: MainBoard_DF_v7.elf secondary-outputs
 
 # Tool invocations
-MainBoard_DF.elf MainBoard_DF.map: $(OBJS) $(USER_OBJS) /home/harsha/STM32CubeIDE/workspace_1.10.0/MainBoard_DF/STM32G431CBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "MainBoard_DF.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/harsha/STM32CubeIDE/workspace_1.10.0/MainBoard_DF/STM32G431CBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MainBoard_DF.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+MainBoard_DF_v7.elf MainBoard_DF_v7.map: $(OBJS) $(USER_OBJS) /home/harsha/STM32CubeIDE/workspace_1.11.0/MainBoard_DF_v7/STM32G431CBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "MainBoard_DF_v7.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/harsha/STM32CubeIDE/workspace_1.11.0/MainBoard_DF_v7/STM32G431CBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MainBoard_DF_v7.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -86,14 +87,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-MainBoard_DF.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "MainBoard_DF.list"
+MainBoard_DF_v7.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "MainBoard_DF_v7.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) MainBoard_DF.elf MainBoard_DF.list MainBoard_DF.map default.size.stdout
+	-$(RM) MainBoard_DF_v7.elf MainBoard_DF_v7.list MainBoard_DF_v7.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

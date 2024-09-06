@@ -45,4 +45,7 @@ void TowerLamp_NegateState(MCP23017_HandleTypeDef *mcp,MCP23017_PortB *pb,uint8_
 	if (light == TOWER_AMBER){
 		pb->values.towerAmber = !pb->values.towerAmber;
 	}
+	if (light == TOWER_BUZZER){
+		pb->values.towerBuzzer = !pb->values.towerBuzzer;
+	}
 }

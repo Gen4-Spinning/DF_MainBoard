@@ -47,6 +47,7 @@
 #include "BT_Console.h"
 
 #include "MB_LEDs.h"
+#include "DataRequest.h"
 
 /* USER CODE END Includes */
 
@@ -84,7 +85,9 @@ DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
 machineSettingsTypeDef msp;
+machineSettingsTypeDef ps;
 machineSettingsTypeDef msp_BT;
+mcPIDSettings pid_BT;
 machineParamsTypeDef mcParams;
 MBErrorsTypeDef MBE;
 MachineErrorsTypedef ME;
@@ -107,6 +110,8 @@ MCP23017_PortB mcp_portB_whichSensor;
 MCP23017_PortB mcp_portB_sensorVal;
 SensorTypeDef sensor;
 Log L;
+
+DataReq DR;
 
 char BufferRec[150];
 char BufferTransmit[150] ;// Buffer for Transmit
@@ -158,13 +163,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
   if (htim == &htim16){ // 1 sec timer that checks if the CAN connections are all OK.
 	  SO.canOverallStatus = SO_checkCanObservers(&SO);
-	  if (SO.canOverallStatus != ALL_CANS_HEALTHY){
+	  /*if (SO.canOverallStatus != ALL_CANS_HEALTHY){
 		  ME.ErrorFlag = 1;
 		  ME_addErrors(&ME,ERR_SYSTEM_LEVEL_SOURCE,SYS_CAN_CUT_ERROR, SO.canOverallStatus, 0); // maybe later find out which ACK failed.
 		  S.SMPS_switchOff = 1;
 		  //stp the timer if you find you have an error.
 		  HAL_TIM_Base_Stop_IT(&htim16);
-	  }
+	  }*/
   }
 
   if(htim==&htim15){
@@ -186,7 +191,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	  timer7Count ++;
 	  if (timer7Count % 5 == 0){
 		  S.BT_sendState = 1;
-		  if (S.runMode== RUN_OPERATING){
+		  if (S.runMode== RUN_ALL){
 			  mcParams.currentMtrsRun += msp.delivery_mMin/60.0 * 0.5;
 		  }
 	  }
@@ -195,6 +200,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		  S.oneSecTimer++;
 		  timer7Count = 0;
 		  Toggle_State_LEDs(&S);
+		  if(DR.requestSent){
+			  DR.timer++;
+		  }
 		  if (sensor.lappingTimerIncrementBool){
 			  sensor.lappingSensorTimer++;
 		  }
@@ -222,11 +230,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	}else if (GPIO_Pin == SMPS_OK_IP_Pin){
 		// if the mother board has turned the SMPS on, but the smps is off, we have a problem!
 		S.SMPS_OK_signal = (uint8_t)(HAL_GPIO_ReadPin(SMPS_OK_IP_GPIO_Port, SMPS_OK_IP_Pin));
-		if ((S.SMPS_cntrl == SMPS_TURNEDON) && (S.SMPS_OK_signal == SMPS_OFF)){
+		/*if ((S.SMPS_cntrl == SMPS_TURNEDON) && (S.SMPS_OK_signal == SMPS_OFF)){
 			ME.ErrorFlag = 1;
 			ME_addErrors(&ME,ERR_SYSTEM_LEVEL_SOURCE, SYS_SMPS_ERROR, ERROR_SOURCE_SYSTEM,0); // maybe later find out which ACK failed.
 			S.SMPS_switchOff = 1;
-		}
+		}*/
 	}
 	else{
 		// for the user input buttons - RED_pin,Green_Pin,Yellow_Pin are falling edge interrupts. Rotary_Pin is both
@@ -337,7 +345,8 @@ int main(void)
   }
   CalculateMachineParameters(&msp,&mcParams);
   ReadySetupCommand_AllMotors(&msp,&mcParams);
-  SO_Reset_InitialLiftPosRecieved(&SO);
+
+  InitializePiecingSettings(&ps);
 
   //Interrupts on UART1 connected to the bluetooth
   __HAL_UART_ENABLE_IT(&huart1,UART_IT_IDLE);//interrupt on receive buffer not empty(buffer full)
@@ -359,7 +368,7 @@ int main(void)
   ChangeState(&S,IDLE_STATE);
 
   //Setup the Bluetooth device MANUALLY ONLY.
-  //BTCmd.manual_setup = 1;
+  BTCmd.manual_setup = 0;
   if (BTCmd.manual_setup){
 	  BTCmd.manual_setup_result = BT_SetupDevice();
 	  if(BTCmd.manual_setup_result != 1){
@@ -911,7 +920,7 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Channel1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 3, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
   /* DMA1_Channel2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 3, 0);
